@@ -408,6 +408,8 @@
             <input type="text" class="form-input" id="rate" value="230" oninput="calcMileage()" style="padding-right:40px">
             <span class="unit">원/km</span>
           </div>
+          <div id="rate-badge" style="display:none;margin-top:5px;font-size:11px;color:#027a48;background:#ecfdf3;border:1px solid #a7f3d0;border-radius:5px;padding:4px 10px;">
+          </div>
         </div>
         <div class="form-row">
           <label class="form-label">유류비 소계</label>
@@ -467,6 +469,30 @@ const NAVER_CLIENT_ID = 'YOUR_NAVER_CLIENT_ID';
 
 // 오늘 날짜 기본값
 document.getElementById('drive-date').value = new Date().toISOString().split('T')[0];
+
+// ===== 단가 자동 로드 =====
+function loadRate() {
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return; // 미설정 시 스킵
+
+  const rateEl   = document.getElementById('rate');
+  const badgeEl  = document.getElementById('rate-badge');
+
+  const cb = 'cbRate_' + Date.now();
+  const s  = document.createElement('script');
+  window[cb] = function(res) {
+    delete window[cb];
+    document.body.removeChild(s);
+    if (res && res.success && res.rate) {
+      rateEl.value = res.rate;
+      badgeEl.textContent = '현재 단가: ' + res.rate + '원/km (관리자 설정)';
+      badgeEl.style.display = 'block';
+      calcMileage();
+    }
+  };
+  s.src = SCRIPT_URL + '?callback=' + cb + '&type=getRate';
+  document.body.appendChild(s);
+}
+loadRate();
 
 // 경유지 추가
 let waypointCount = 0;
