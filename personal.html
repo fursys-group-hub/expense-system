@@ -356,7 +356,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec';
 
 document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
 
@@ -421,7 +421,7 @@ function submitForm() {
 }
 
 function sendData(data, onSuccess, onError) {
-  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { setTimeout(onSuccess, 800); return; }
+  if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec') { setTimeout(onSuccess, 800); return; }
   const cb = 'cb_' + Date.now();
   const s = document.createElement('script');
   window[cb] = (res) => { delete window[cb]; document.body.removeChild(s); res && res.success ? onSuccess() : onError(res && res.error || ''); };
