@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인카드 지출 - 에프스토리</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a3a6b;
+    --accent: #e8f0fe;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --border: #d0d5dd;
+    --text: #1d2939;
+    --muted: #667085;
+    --font: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+  .header {
+    background: var(--primary); padding: 0 40px; height: 60px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .back-btn { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
+  .back-btn:hover { color: white; }
+  .header-title { color: white; font-size: 16px; font-weight: 700; }
+  .header-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-left: auto; }
+  .main { max-width: 700px; margin: 0 auto; padding: 32px 20px 60px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 20px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-header {
+    background: var(--primary); color: white;
+    padding: 12px 20px; font-size: 13px; font-weight: 700;
+  }
+  .card-body { padding: 24px; }
+  .form-row { margin-bottom: 18px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 700;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .required { color: #e53935; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 7px; padding: 10px 12px;
+    font-family: var(--font); font-size: 13px;
+    color: var(--text); background: white; outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
+  .form-input.readonly { background: #f9fafb; color: var(--muted); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* 세금 계산 영역 */
+  .tax-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .tax-cell {
+    padding: 0;
+    border-right: 1px solid var(--border);
+  }
+  .tax-cell:last-child { border-right: none; }
+  .tax-cell-label {
+    background: #f9fafb;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .tax-cell-input {
+    position: relative;
+  }
+  .tax-cell-input input {
+    width: 100%; border: none; outline: none;
+    padding: 11px 30px 11px 12px;
+    font-family: var(--font); font-size: 14px;
+    font-weight: 700; color: var(--text); background: white;
+  }
+  .tax-cell-input input.total-input { background: #f0f4ff; color: var(--primary); }
+  .tax-cell-input input:focus { background: #f0f4ff; }
+  .tax-cell-input .unit {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%); font-size: 11px; color: var(--muted);
+  }
+
+  /* 계정과목 관리자 표시 */
+  .admin-badge {
+    display: inline-block;
+    background: #fef3c7; color: #92400e;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 4px;
+    margin-left: 6px; vertical-align: middle;
+  }
+
+  .summary-box {
+    background: var(--primary); color: white;
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  .summary-label { font-size: 12px; opacity: 0.7; margin-bottom: 6px; }
+  .summary-amount { font-size: 30px; font-weight: 700; }
+  .summary-sub { font-size: 12px; opacity: 0.65; margin-top: 4px; }
+
+  .btn-submit {
+    width: 100%; background: var(--primary); color: white;
+    border: none; padding: 14px; border-radius: 8px;
+    font-family: var(--font); font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background 0.15s; letter-spacing: 0.05em;
+  }
+  .btn-submit:hover { background: #2451a0; }
+  .btn-submit:disabled { background: var(--muted); cursor: not-allowed; }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.35); border-top-color: white;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .success-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .success-overlay.show { display: flex; }
+  .success-card {
+    background: white; border-radius: 16px;
+    padding: 48px 56px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 380px; width: 90%;
+  }
+  .success-icon { font-size: 52px; margin-bottom: 16px; }
+  .success-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+  .success-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .success-btns { display: flex; gap: 10px; }
+  .btn-home, .btn-new {
+    flex: 1; padding: 11px; border-radius: 7px;
+    font-family: var(--font); font-size: 13px; font-weight: 700;
+    cursor: pointer; text-decoration: none; text-align: center; display: block;
+  }
+  .btn-home { background: #f2f4f7; color: var(--text); border: none; }
+  .btn-new { background: var(--primary); color: white; border: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 뒤로</a>
+  <span class="header-title">💳 법인카드 지출</span>
+  <span class="header-sub">에프스토리</span>
+</div>
+
+<div class="main">
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <div class="card-header">📋 기본 정보</div>
+    <div class="card-body">
+      <div class="row-2">
+        <div class="form-row">
+          <label class="form-label">작성자 <span class="required">*</span></label>
+          <input type="text" class="form-input" id="writer" placeholder="이름 입력">
+        </div>
+        <div class="form-row">
+          <label class="form-label">결제일 <span class="required">*</span></label>
+          <input type="date" class="form-input" id="pay-date">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 거래처 정보 -->
+  <div class="card">
+    <div class="card-header">🏪 거래처 정보</div>
+    <div class="card-body">
+      <div class="row-2">
+        <div class="form-row">
+          <label class="form-label">사업자번호 <span class="required">*</span></label>
+          <input type="text" class="form-input" id="biz-num"
+            placeholder="000-00-00000" maxlength="12"
+            oninput="formatBizNum(this)">
+        </div>
+        <div class="form-row">
+          <label class="form-label">사업자명 (업체명) <span class="required">*</span></label>
+          <input type="text" class="form-input" id="biz-name" placeholder="업체명 입력">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 금액 정보 -->
+  <div class="card">
+    <div class="card-header">💰 금액 정보</div>
+    <div class="card-body">
+      <div class="form-row">
+        <label class="form-label" style="margin-bottom:10px">공급가액 / 부가세 / 합계 <span class="required">*</span></label>
+        <div class="tax-grid">
+          <div class="tax-cell">
+            <div class="tax-cell-label">공급가액</div>
+            <div class="tax-cell-input">
+              <input type="text" id="supply" placeholder="0"
+                oninput="formatNum(this); calcTax()">
+              <span class="unit">원</span>
+            </div>
+          </div>
+          <div class="tax-cell">
+            <div class="tax-cell-label">부가세</div>
+            <div class="tax-cell-input">
+              <input type="text" id="vat" placeholder="0"
+                oninput="formatNum(this); calcTax()">
+              <span class="unit">원</span>
+            </div>
+          </div>
+          <div class="tax-cell">
+            <div class="tax-cell-label">합계</div>
+            <div class="tax-cell-input">
+              <input type="text" class="total-input" id="total" placeholder="0" readonly>
+              <span class="unit">원</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+          💡 공급가액과 부가세 입력 시 합계가 자동 계산됩니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 지출 내용 -->
+  <div class="card">
+    <div class="card-header">📝 지출 내용</div>
+    <div class="card-body">
+      <div class="form-row">
+        <label class="form-label">적요 (구매사유) <span class="required">*</span></label>
+        <textarea class="form-textarea" id="memo"
+          placeholder="예) 음성인원 면담후 중식 (권성안외 3명)"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          계정과목
+          <span class="admin-badge">관리자 작성</span>
+        </label>
+        <input type="text" class="form-input" id="account"
+          placeholder="관리자가 작성합니다">
+      </div>
+    </div>
+  </div>
+
+  <!-- 합계 요약 -->
+  <div class="summary-box">
+    <div class="summary-label">결제 합계</div>
+    <div class="summary-amount" id="summary-amount">₩ 0</div>
+    <div class="summary-sub" id="summary-sub">공급가액 0원 + 부가세 0원</div>
+  </div>
+
+  <button class="btn-submit" id="btn-submit" onclick="submitForm()">제출하기</button>
+</div>
+
+<!-- 성공 -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">제출 완료!</div>
+    <div class="success-sub">법인카드 지출이 접수되었습니다.<br>담당자 검토 후 처리됩니다.</div>
+    <div class="success-btns">
+      <a class="btn-home" href="index.html">홈으로</a>
+      <button class="btn-new" onclick="resetForm()">새로 작성</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+
+function formatNum(el) {
+  const raw = el.value.replace(/[^0-9]/g, '');
+  el.value = raw ? Number(raw).toLocaleString() : '';
+}
+function parseNum(val) { return parseInt((val || '0').replace(/,/g, ''), 10) || 0; }
+
+function formatBizNum(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v.length > 3 && v.length <= 5) v = v.slice(0,3) + '-' + v.slice(3);
+  else if (v.length > 5) v = v.slice(0,3) + '-' + v.slice(3,5) + '-' + v.slice(5,10);
+  el.value = v;
+}
+
+function calcTax() {
+  const supply = parseNum(document.getElementById('supply').value);
+  const vat    = parseNum(document.getElementById('vat').value);
+  const total  = supply + vat;
+  document.getElementById('total').value = total.toLocaleString();
+  document.getElementById('summary-amount').textContent = '₩ ' + total.toLocaleString();
+  document.getElementById('summary-sub').textContent =
+    `공급가액 ${supply.toLocaleString()}원 + 부가세 ${vat.toLocaleString()}원`;
+}
+
+function submitForm() {
+  const writer  = document.getElementById('writer').value.trim();
+  const date    = document.getElementById('pay-date').value;
+  const bizNum  = document.getElementById('biz-num').value.trim();
+  const bizName = document.getElementById('biz-name').value.trim();
+  const supply  = parseNum(document.getElementById('supply').value);
+  const vat     = parseNum(document.getElementById('vat').value);
+  const memo    = document.getElementById('memo').value.trim();
+
+  if (!writer || !date || !bizNum || !bizName || !supply || !memo) {
+    alert('작성자, 결제일, 사업자번호, 사업자명, 공급가액, 적요는 필수입니다.');
+    return;
+  }
+
+  const data = {
+    type: 'corporate', company: '에프스토리',
+    writer, date, bizNum, bizName,
+    supply, vat, total: supply + vat,
+    memo, account: document.getElementById('account').value.trim()
+  };
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>제출 중...';
+
+  sendData(data, () => {
+    btn.disabled = false; btn.textContent = '제출하기';
+    document.getElementById('success-overlay').classList.add('show');
+  }, (err) => {
+    btn.disabled = false; btn.textContent = '제출하기';
+    alert('제출 중 오류: ' + err);
+  });
+}
+
+function sendData(data, onSuccess, onError) {
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { setTimeout(onSuccess, 800); return; }
+  const cb = 'cb_' + Date.now();
+  const s = document.createElement('script');
+  window[cb] = (res) => { delete window[cb]; document.body.removeChild(s); res && res.success ? onSuccess() : onError(res && res.error || ''); };
+  s.onerror = () => { delete window[cb]; document.body.removeChild(s); onError('네트워크 오류'); };
+  s.src = SCRIPT_URL + '?callback=' + cb + '&data=' + encodeURIComponent(JSON.stringify(data));
+  document.body.appendChild(s);
+}
+
+function resetForm() {
+  document.getElementById('success-overlay').classList.remove('show');
+  ['writer','biz-num','biz-name','supply','vat','total','memo','account'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('summary-amount').textContent = '₩ 0';
+  document.getElementById('summary-sub').textContent = '공급가액 0원 + 부가세 0원';
+}
+</script>
+</body>
+</html>
