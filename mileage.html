@@ -463,7 +463,7 @@
 
 <script>
 // ★ Apps Script URL (배포 후 입력)
-const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec';
 // ★ 네이버 API 키 (발급 후 입력)
 const NAVER_CLIENT_ID = 'YOUR_NAVER_CLIENT_ID';
 
@@ -472,7 +472,7 @@ document.getElementById('drive-date').value = new Date().toISOString().split('T'
 
 // ===== 단가 자동 로드 =====
 function loadRate() {
-  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return; // 미설정 시 스킵
+  if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec') return; // 미설정 시 스킵
 
   const rateEl   = document.getElementById('rate');
   const badgeEl  = document.getElementById('rate-badge');
@@ -608,7 +608,7 @@ function submitForm() {
 }
 
 function sendData(data, onSuccess, onError) {
-  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+  if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec') {
     setTimeout(() => onSuccess(), 800); return;
   }
   const cb = 'cb_' + Date.now();
