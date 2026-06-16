@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>개인미지급금 - 바로서비스</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a3a6b;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --border: #d0d5dd;
+    --border-dark: #2c2c2c;
+    --text: #1d2939;
+    --muted: #667085;
+    --label-bg: #ede8de;
+    --paper: #fdfcf8;
+    --stamp-red: #b52a1c;
+    --font: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: var(--primary); padding: 0 40px; height: 60px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .back-btn { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
+  .back-btn:hover { color: white; }
+  .header-title { color: white; font-size: 16px; font-weight: 700; }
+  .header-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-left: auto; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* 지출결의서 용지 */
+  .doc-paper {
+    background: var(--paper);
+    border: 1.5px solid var(--border-dark);
+    padding: 40px 48px 44px;
+    box-shadow: 4px 4px 0 #bbb, 8px 8px 0 #ddd, 0 16px 48px rgba(0,0,0,0.12);
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  /* 헤더: 제목 + 결재란 */
+  .doc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 20px;
+  }
+  .doc-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.4em;
+    line-height: 1;
+  }
+
+  /* 결재란 */
+  .approval-box { border: 1.5px solid var(--border-dark); }
+  .ap-header {
+    text-align: center; border-bottom: 1px solid var(--border-dark);
+    padding: 4px 16px; font-weight: 700; background: var(--label-bg);
+    font-size: 12px; letter-spacing: 0.15em;
+  }
+  .ap-cols { display: flex; }
+  .ap-col {
+    display: flex; flex-direction: column; align-items: center;
+    border-right: 1px solid var(--border-dark); min-width: 72px;
+  }
+  .ap-col:last-child { border-right: none; }
+  .ap-col-label {
+    font-weight: 700; padding: 4px 6px;
+    border-bottom: 1px solid var(--border-dark); width: 100%;
+    text-align: center; background: var(--label-bg);
+    font-size: 11px; letter-spacing: 0.1em;
+  }
+  .ap-col-body {
+    height: 52px; display: flex; align-items: center;
+    justify-content: center; width: 100%;
+  }
+  .ap-stamp {
+    color: var(--stamp-red); font-size: 20px;
+    transform: rotate(-10deg); display: inline-block; opacity: 0.8;
+  }
+
+  /* 정보 테이블 */
+  .info-table {
+    width: 100%; border-collapse: collapse;
+    border: 1.5px solid var(--border-dark);
+    table-layout: fixed;
+  }
+  .info-table colgroup col { }
+  .info-table td { border: 1px solid #999; padding: 0; }
+  .lbl {
+    background: var(--label-bg); font-weight: 700;
+    text-align: center; padding: 9px 8px;
+    font-size: 12px; letter-spacing: 0.15em; white-space: nowrap;
+  }
+  .val input {
+    width: 100%; border: none; outline: none;
+    padding: 9px 10px; font-family: var(--font);
+    font-size: 13px; color: var(--text); background: white;
+    transition: background 0.15s;
+  }
+  .val input:focus { background: #f0f4ff; }
+  .val.ro input { background: var(--label-bg); color: var(--muted); font-weight: 500; }
+
+  /* 내역 테이블 */
+  .detail-wrap {
+    border-left: 1.5px solid var(--border-dark);
+    border-right: 1.5px solid var(--border-dark);
+  }
+  .detail-table {
+    width: 100%; border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .detail-table th {
+    background: var(--label-bg); border: 1px solid #999;
+    padding: 8px 6px; font-weight: 700; text-align: center;
+    font-size: 12px; letter-spacing: 0.12em;
+  }
+  .detail-table td { border: 1px solid #ccc; padding: 0; vertical-align: middle; }
+  .detail-table td input {
+    width: 100%; border: none; outline: none;
+    padding: 8px 8px; font-family: var(--font);
+    font-size: 13px; color: var(--text); background: white;
+    text-align: center; transition: background 0.15s;
+  }
+  .detail-table td input:focus { background: #f0f4ff; }
+  .detail-table td input.left { text-align: left; }
+  .detail-table tbody tr:nth-child(even) td input { background: #faf9f5; }
+  .detail-table tbody tr:nth-child(even) td input:focus { background: #f0f4ff; }
+
+  /* 상세내역 세로 셀 */
+  .inner-label {
+    background: var(--label-bg); text-align: center;
+    font-weight: 700; font-size: 13px; vertical-align: middle;
+    width: 32px; border: 1px solid #999;
+  }
+  .inner-label span {
+    display: block; writing-mode: vertical-lr;
+    letter-spacing: 0.2em; margin: 0 auto; font-size: 12px;
+  }
+
+  /* 합계 행 */
+  .sum-row td {
+    background: var(--label-bg); border: 1px solid #999;
+    padding: 9px 10px; font-weight: 700; text-align: center;
+    font-size: 13px; letter-spacing: 0.12em;
+  }
+  .sum-row { border-top: 1.5px solid var(--border-dark); }
+  .sum-amt { color: var(--primary); font-size: 15px; font-weight: 700; }
+
+  .claim-text {
+    border: 1.5px solid var(--border-dark); border-top: none;
+    padding: 12px; font-size: 13px; text-align: center; background: var(--paper);
+    letter-spacing: 0.04em;
+  }
+  .evidence-row {
+    border: 1.5px solid var(--border-dark); border-top: none;
+    padding: 9px 14px; font-size: 12px; font-weight: 700;
+  }
+
+  /* 버튼 */
+  .action-row {
+    display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;
+  }
+  .btn-add {
+    padding: 11px 24px; background: white;
+    border: 1.5px solid var(--border); border-radius: 7px;
+    font-family: var(--font); font-size: 13px; font-weight: 500;
+    color: var(--text); cursor: pointer; transition: all 0.15s;
+  }
+  .btn-add:hover { border-color: var(--primary); color: var(--primary); background: #e8f0fe; }
+  .btn-submit {
+    padding: 11px 48px; background: var(--primary);
+    border: 2px solid var(--border-dark); border-radius: 7px;
+    font-family: var(--font); font-size: 14px; font-weight: 700;
+    color: white; cursor: pointer; letter-spacing: 0.12em;
+    box-shadow: 2px 2px 0 var(--border-dark); transition: all 0.15s;
+  }
+  .btn-submit:hover { background: #2451a0; }
+  .btn-submit:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--border-dark); }
+  .btn-submit:disabled { background: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.35); border-top-color: white;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .success-overlay.show { display: flex; }
+  .success-card {
+    background: var(--paper); border: 2px solid var(--border-dark);
+    padding: 48px 56px; text-align: center;
+    box-shadow: 5px 5px 0 var(--border-dark), 0 20px 60px rgba(0,0,0,0.25);
+    max-width: 380px; width: 90%;
+  }
+  .success-stamp {
+    font-size: 36px; font-weight: 700; color: var(--stamp-red);
+    border: 3px solid var(--stamp-red); display: inline-block;
+    padding: 4px 16px; transform: rotate(-8deg);
+    margin-bottom: 16px; letter-spacing: 0.12em; opacity: 0.85;
+  }
+  .success-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .success-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .success-btns { display: flex; gap: 10px; }
+  .btn-home, .btn-new {
+    flex: 1; padding: 10px; border-radius: 7px;
+    font-family: var(--font); font-size: 13px; font-weight: 700;
+    cursor: pointer; text-decoration: none; text-align: center; display: block;
+  }
+  .btn-home { background: #f2f4f7; color: var(--text); border: none; }
+  .btn-new { background: var(--primary); color: white; border: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 뒤로</a>
+  <span class="header-title">🧾 개인미지급금 지출결의서</span>
+  <span class="header-sub">바로서비스</span>
+</div>
+
+<div class="main">
+  <div class="doc-paper">
+
+    <!-- 제목 + 결재란 -->
+    <div class="doc-header">
+      <div class="doc-title">지 출 결 의 서</div>
+      <div class="approval-box">
+        <div class="ap-header">결&nbsp;&nbsp;&nbsp;&nbsp;재</div>
+        <div class="ap-cols">
+          <div class="ap-col">
+            <div class="ap-col-label">담&nbsp;&nbsp;당</div>
+            <div class="ap-col-body"><span class="ap-stamp">✔</span></div>
+          </div>
+          <div class="ap-col">
+            <div class="ap-col-label">승&nbsp;&nbsp;인</div>
+            <div class="ap-col-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기본 정보 -->
+    <table class="info-table">
+      <colgroup>
+        <col style="width:76px"><col style="width:21%">
+        <col style="width:68px"><col style="width:21%">
+        <col style="width:68px"><col>
+      </colgroup>
+      <tr>
+        <td class="lbl">지출일자</td>
+        <td class="val"><input type="date" id="p-date"></td>
+        <td class="lbl">소&nbsp;&nbsp;&nbsp;&nbsp;속</td>
+        <td class="val ro"><input type="text" value="바로서비스" readonly></td>
+        <td class="lbl">작&nbsp;성&nbsp;자</td>
+        <td class="val"><input type="text" id="p-name" placeholder="이름 입력"></td>
+      </tr>
+      <tr>
+        <td class="lbl">제&nbsp;&nbsp;&nbsp;&nbsp;목</td>
+        <td class="val" colspan="5"><input type="text" id="p-title" placeholder="지출 제목 입력"></td>
+      </tr>
+    </table>
+
+    <!-- 내역 테이블 -->
+    <div class="detail-wrap">
+      <table class="detail-table">
+        <colgroup>
+          <col style="width:32px"><col><col style="width:22%"><col style="width:28%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th></th>
+            <th>적&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;요</th>
+            <th>금&nbsp;&nbsp;&nbsp;&nbsp;액</th>
+            <th>비&nbsp;&nbsp;&nbsp;&nbsp;고</th>
+          </tr>
+        </thead>
+        <tbody id="detail-body">
+          <tr>
+            <td class="inner-label" rowspan="6" id="inner-label"><span>상세내역</span></td>
+            <td><input type="text" class="left detail-summary" placeholder="적요 입력"></td>
+            <td><input type="text" class="detail-amount" placeholder="0" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note" placeholder="비고"></td>
+          </tr>
+          <tr>
+            <td><input type="text" class="left detail-summary"></td>
+            <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note"></td>
+          </tr>
+          <tr>
+            <td><input type="text" class="left detail-summary"></td>
+            <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note"></td>
+          </tr>
+          <tr>
+            <td><input type="text" class="left detail-summary"></td>
+            <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note"></td>
+          </tr>
+          <tr>
+            <td><input type="text" class="left detail-summary"></td>
+            <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note"></td>
+          </tr>
+          <tr>
+            <td><input type="text" class="left detail-summary"></td>
+            <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+            <td><input type="text" class="left detail-note"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="sum-row">
+            <td colspan="2">합&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;계</td>
+            <td class="sum-amt" id="total-display">0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="claim-text">위 금액을 청구(영수) 하오니 결재 바랍니다.</div>
+    <div class="evidence-row">※ 증빙 첨부</div>
+
+    <div class="action-row">
+      <button class="btn-add" onclick="addRow()">＋ 행 추가</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitForm()">결&nbsp;&nbsp;재&nbsp;&nbsp;상&nbsp;&nbsp;신</button>
+    </div>
+  </div>
+</div>
+
+<!-- 성공 -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <div class="success-stamp">접수완료</div>
+    <div class="success-title">지출결의서가 제출되었습니다.</div>
+    <div class="success-sub">담당자 검토 후 처리됩니다.</div>
+    <div class="success-btns">
+      <a class="btn-home" href="index.html">홈으로</a>
+      <button class="btn-new" onclick="resetForm()">새로 작성</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxTfwYQRaon-seJBaWebXO87wFvFoZXGh42Be1gEDziBIQ4-nvsc0KEN7KHBGTjuMHqQ/exec';
+
+document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+
+function formatAmt(el) {
+  const raw = el.value.replace(/[^0-9]/g, '');
+  el.value = raw ? Number(raw).toLocaleString() : '';
+  calcTotal();
+}
+function parseAmt(val) { return parseInt((val || '0').replace(/,/g, ''), 10) || 0; }
+
+function calcTotal() {
+  let total = 0;
+  document.querySelectorAll('.detail-amount').forEach(el => { total += parseAmt(el.value); });
+  document.getElementById('total-display').textContent = total.toLocaleString();
+}
+
+function addRow() {
+  const tbody = document.getElementById('detail-body');
+  const label = document.getElementById('inner-label');
+  label.setAttribute('rowspan', parseInt(label.getAttribute('rowspan') || 6) + 1);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="left detail-summary"></td>
+    <td><input type="text" class="detail-amount" oninput="formatAmt(this)"></td>
+    <td><input type="text" class="left detail-note"></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function submitForm() {
+  const name  = document.getElementById('p-name').value.trim();
+  const date  = document.getElementById('p-date').value;
+  const title = document.getElementById('p-title').value.trim();
+
+  const summaries = [...document.querySelectorAll('.detail-summary')].map(e => e.value.trim());
+  const amounts   = [...document.querySelectorAll('.detail-amount')].map(e => parseAmt(e.value));
+  const notes     = [...document.querySelectorAll('.detail-note')].map(e => e.value.trim());
+  const total     = amounts.reduce((a, b) => a + b, 0);
+
+  if (!name || !date || !title) { alert('작성자, 지출일자, 제목은 필수입니다.'); return; }
+  if (total === 0) { alert('금액을 하나 이상 입력해 주세요.'); return; }
+
+  const rows = summaries.map((s, i) => ({ summary: s, amount: amounts[i], note: notes[i] }))
+    .filter(r => r.summary || r.amount);
+
+  const data = {
+    type: 'personal', company: '바로서비스',
+    name, date, department: '바로서비스', title, rows, totalAmount: total
+  };
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>제출 중...';
+
+  sendData(data, () => {
+    btn.disabled = false; btn.textContent = '결  재  상  신';
+    document.getElementById('success-overlay').classList.add('show');
+  }, err => {
+    btn.disabled = false; btn.textContent = '결  재  상  신';
+    alert('오류: ' + err);
+  });
+}
+
+function sendData(data, onSuccess, onError) {
+  // 실제 URL 등록됨
+  const cb = 'cb_' + Date.now();
+  const s = document.createElement('script');
+  window[cb] = (res) => { delete window[cb]; document.body.removeChild(s); res && res.success ? onSuccess() : onError(res && res.error || ''); };
+  s.onerror = () => { delete window[cb]; document.body.removeChild(s); onError('네트워크 오류'); };
+  s.src = SCRIPT_URL + '?callback=' + cb + '&data=' + encodeURIComponent(JSON.stringify(data));
+  document.body.appendChild(s);
+}
+
+function resetForm() {
+  document.getElementById('success-overlay').classList.remove('show');
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('p-title').value = '';
+  document.querySelectorAll('.detail-summary, .detail-amount, .detail-note').forEach(el => el.value = '');
+  document.getElementById('total-display').textContent = '0';
+}
+</script>
+</body>
+</html>
